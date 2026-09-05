@@ -34,7 +34,7 @@ button.addEventListener("click", async () => {
     try {
 
         const response = await fetch(
-            "http://127.0.0.1:8000/transcribe",
+            "https://youtube-text-l8y1.onrender.com/transcribe",
             {
                 method: "POST",
 
