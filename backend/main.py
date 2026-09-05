@@ -1,9 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-import urllib.request
-import urllib.parse
-import json
+import requests
 
 app = FastAPI()
 
@@ -15,42 +13,33 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
 class VideoRequest(BaseModel):
     url: str
-
 
 @app.get("/")
 def home():
     return {"status": "TubeScript backend działa!"}
 
-
 @app.post("/transcribe")
 def transcribe(video: VideoRequest):
-
     try:
-        encoded_url = urllib.parse.quote(video.url, safe="")
-
-        api_url = (
-            "https://api.freetranscriptapi.com/v1/transcript"
-            f"?video_url={encoded_url}"
+        response = requests.get(
+            "https://api.freetranscriptapi.com/v1/transcript",
+            params={"video_url": video.url},
+            timeout=30
         )
 
-        with urllib.request.urlopen(api_url, timeout=30) as response:
-            data = json.loads(response.read().decode())
-
-        transcript_data = data.get("transcript")
-
-        if not transcript_data:
+        if response.status_code != 200:
             raise HTTPException(
-                status_code=404,
-                detail="Nie znaleziono transkrypcji dla tego filmu."
+                status_code=response.status_code,
+                detail=f"FreeTranscriptAPI: {response.text}"
             )
 
-        # API zwraca fragmenty tekstu, więc łączymy je
-        # w jeden normalny tekst.
+        data = response.json()
+
         transcript = "\n".join(
-            item["text"] for item in transcript_data
+            item["text"]
+            for item in data["transcript"]
             if item.get("text")
         )
 
