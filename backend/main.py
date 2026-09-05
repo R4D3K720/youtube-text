@@ -1,18 +1,16 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from youtube_transcript_api import YouTubeTranscriptApi
-from urllib.parse import urlparse, parse_qs
-
+import urllib.request
+import urllib.parse
+import json
 
 app = FastAPI()
 
-
-# Pozwala frontendowi komunikować się z backendem
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
+    allow_origins=["https://r4d3k720.github.io"],
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -22,64 +20,50 @@ class VideoRequest(BaseModel):
     url: str
 
 
-def get_video_id(url: str):
-
-    parsed = urlparse(url)
-
-    # youtube.com/watch?v=XXXX
-    if "youtube.com" in parsed.netloc:
-
-        query = parse_qs(parsed.query)
-
-        if "v" in query:
-            return query["v"][0]
-
-    # youtu.be/XXXX
-    if "youtu.be" in parsed.netloc:
-
-        return parsed.path.strip("/")
-
-    return None
-
-
 @app.get("/")
 def home():
-
-    return {
-        "status": "TubeScript backend działa!"
-    }
+    return {"status": "TubeScript backend działa!"}
 
 
 @app.post("/transcribe")
 def transcribe(video: VideoRequest):
 
-    video_id = get_video_id(video.url)
+    try:
+        encoded_url = urllib.parse.quote(video.url, safe="")
 
-    if not video_id:
-
-        raise HTTPException(
-            status_code=400,
-            detail="Nieprawidłowy link YouTube."
+        api_url = (
+            "https://api.freetranscriptapi.com/v1/transcript"
+            f"?video_url={encoded_url}"
         )
 
-    try:
+        with urllib.request.urlopen(api_url, timeout=30) as response:
+            data = json.loads(response.read().decode())
 
-        api = YouTubeTranscriptApi()
+        transcript_data = data.get("transcript")
 
-        fetched = api.fetch(video_id)
+        if not transcript_data:
+            raise HTTPException(
+                status_code=404,
+                detail="Nie znaleziono transkrypcji dla tego filmu."
+            )
 
+        # API zwraca fragmenty tekstu, więc łączymy je
+        # w jeden normalny tekst.
         transcript = "\n".join(
-            snippet.text
-            for snippet in fetched
+            item["text"] for item in transcript_data
+            if item.get("text")
         )
 
         return {
-            "video_id": video_id,
+            "title": data.get("title"),
+            "language": data.get("language"),
             "transcript": transcript
         }
 
-    except Exception as e:
+    except HTTPException:
+        raise
 
+    except Exception as e:
         raise HTTPException(
             status_code=500,
             detail=f"Nie udało się pobrać transkrypcji: {str(e)}"
