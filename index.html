@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>TubeScript</title>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <main class="container">
+
+        <div class="badge">
+            AI TRANSCRIPTION
+        </div>
+
+        <h1>
+            YouTube → <span>Text</span>
+        </h1>
+
+        <p class="subtitle">
+            Zamień film z YouTube w czytelny tekst.
+        </p>
+
+        <div class="inputBox">
+
+            <input
+                id="youtubeURL"
+                type="text"
+                placeholder="Wklej link do YouTube..."
+            >
+
+            <button id="transcribeButton">
+                Transkrybuj
+            </button>
+
+        </div>
+
+        <div id="loading" class="loading hidden">
+            <div class="spinner"></div>
+            <span>Transkrybuję film...</span>
+        </div>
+
+        <section id="result" class="result hidden">
+
+            <div class="resultHeader">
+
+                <div>
+                    <span class="smallLabel">
+                        TRANSKRYPCJA
+                    </span>
+
+                    <h2>Gotowe</h2>
+                </div>
+
+                <button id="copyButton">
+                    Kopiuj
+                </button>
+
+            </div>
+
+            <div id="transcript" class="transcript"></div>
+
+        </section>
+
+    </main>
+
+    <script src="script.js"></script>
+
+</body>
+</html>
